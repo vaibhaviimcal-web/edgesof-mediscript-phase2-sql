@@ -80,7 +80,6 @@
 -- PRESCRIPTION COMPLIANCE FIELDS
 -- =====================================================
 
--- Add prescription compliance fields
 ALTER TABLE prescriptions ADD COLUMN IF NOT EXISTS prescription_type VARCHAR(50) CHECK (prescription_type IN ('regular', 'narcotic', 'psychotropic'));
 ALTER TABLE prescriptions ADD COLUMN IF NOT EXISTS validity_days INTEGER DEFAULT 30;
 ALTER TABLE prescriptions ADD COLUMN IF NOT EXISTS expiry_date DATE;
@@ -95,7 +94,6 @@ ALTER TABLE prescriptions ADD COLUMN IF NOT EXISTS is_valid BOOLEAN DEFAULT true
 -- MEDICINE SCHEDULE TRACKING
 -- =====================================================
 
--- Add medicine schedule and compliance fields
 ALTER TABLE medicines ADD COLUMN IF NOT EXISTS schedule VARCHAR(10) CHECK (schedule IN ('OTC', 'H', 'H1', 'X', 'G'));
 ALTER TABLE medicines ADD COLUMN IF NOT EXISTS mrp DECIMAL(10,2);
 ALTER TABLE medicines ADD COLUMN IF NOT EXISTS hsn_code VARCHAR(20);
@@ -108,7 +106,6 @@ ALTER TABLE medicines ADD COLUMN IF NOT EXISTS requires_prescription BOOLEAN DEF
 -- GST COMPLIANCE FIELDS
 -- =====================================================
 
--- Add GST fields to invoices
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS gstin VARCHAR(15);
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_type VARCHAR(50) DEFAULT 'tax_invoice';
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS place_of_supply VARCHAR(100);
@@ -119,7 +116,6 @@ ALTER TABLE invoices ADD COLUMN IF NOT EXISTS gst_rate DECIMAL(5,2) DEFAULT 18.0
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS taxable_amount DECIMAL(10,2);
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS round_off DECIMAL(10,2) DEFAULT 0;
 
--- Add HSN/SAC codes to invoice items
 ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS hsn_sac_code VARCHAR(20);
 ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS gst_rate DECIMAL(5,2) DEFAULT 18.00;
 ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS cgst_amount DECIMAL(10,2) DEFAULT 0;
@@ -131,7 +127,6 @@ ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS taxable_amount DECIMAL(10,2);
 -- DOCTOR COMPLIANCE FIELDS
 -- =====================================================
 
--- Add doctor compliance fields
 ALTER TABLE users ADD COLUMN IF NOT EXISTS medical_council VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS registration_year INTEGER;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS registration_state VARCHAR(100);
@@ -145,7 +140,6 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS can_prescribe_schedule_x BOOLEAN DEFA
 -- CLINIC COMPLIANCE FIELDS
 -- =====================================================
 
--- Add clinic compliance fields
 ALTER TABLE clinics ADD COLUMN IF NOT EXISTS clinical_establishment_registration VARCHAR(100);
 ALTER TABLE clinics ADD COLUMN IF NOT EXISTS registration_authority VARCHAR(100);
 ALTER TABLE clinics ADD COLUMN IF NOT EXISTS registration_date DATE;
@@ -158,7 +152,6 @@ ALTER TABLE clinics ADD COLUMN IF NOT EXISTS place_of_business VARCHAR(100);
 -- CONTROLLED SUBSTANCE LOG
 -- =====================================================
 
--- Create narcotic/psychotropic drug log table
 CREATE TABLE IF NOT EXISTS controlled_substance_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     clinic_id UUID REFERENCES clinics(id) ON DELETE CASCADE,
@@ -183,7 +176,6 @@ CREATE TABLE IF NOT EXISTS controlled_substance_log (
 -- PRESCRIPTION AUDIT
 -- =====================================================
 
--- Create prescription audit table
 CREATE TABLE IF NOT EXISTS prescription_audit (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     prescription_id UUID REFERENCES prescriptions(id) ON DELETE CASCADE,
@@ -199,7 +191,6 @@ CREATE TABLE IF NOT EXISTS prescription_audit (
 -- GST RETURNS
 -- =====================================================
 
--- Create GST returns table
 CREATE TABLE IF NOT EXISTS gst_returns (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     clinic_id UUID REFERENCES clinics(id) ON DELETE CASCADE,
@@ -221,7 +212,6 @@ CREATE TABLE IF NOT EXISTS gst_returns (
 -- DRUG INTERACTION WARNINGS
 -- =====================================================
 
--- Create drug interaction table
 CREATE TABLE IF NOT EXISTS drug_interactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     medicine_a_id UUID REFERENCES medicines(id),
@@ -250,7 +240,6 @@ CREATE INDEX IF NOT EXISTS idx_prescriptions_expiry ON prescriptions(expiry_date
 -- UPDATE EXISTING DATA
 -- =====================================================
 
--- Update clinic with GST details
 UPDATE clinics 
 SET gstin = '27AABCU9603R1ZM',
     state_code = '27',
@@ -260,7 +249,6 @@ SET gstin = '27AABCU9603R1ZM',
     registration_date = '2024-01-01'
 WHERE name = 'City Health Clinic';
 
--- Update doctor with registration details
 UPDATE users 
 SET medical_council = 'Medical Council of India',
     registration_year = 2015,
@@ -270,7 +258,6 @@ SET medical_council = 'Medical Council of India',
     can_prescribe_schedule_x = false
 WHERE email = 'doctor@clinic.com';
 
--- Update medicines with Indian drug data
 UPDATE medicines SET 
     schedule = 'OTC', 
     hsn_code = '30049099',
@@ -327,13 +314,11 @@ UPDATE medicines SET
     max_daily_dose = '80mg'
 WHERE name = 'Atorvastatin';
 
--- Add Schedule H1 and X drugs for testing
 INSERT INTO medicines (name, generic_name, brand_name, strength, unit, form, category, schedule, price, mrp, hsn_code, requires_prescription, max_daily_dose) VALUES
 ('Alprazolam', 'Alprazolam', 'Alprax', '0.5', 'mg', 'Tablet', 'Anxiolytic', 'H1', 25, 30, '30049099', true, '2mg'),
 ('Codeine', 'Codeine Phosphate', 'Codeine', '30', 'mg', 'Tablet', 'Opioid Analgesic', 'X', 50, 60, '30049099', true, '120mg')
 ON CONFLICT DO NOTHING;
 
--- Add some drug interactions
 INSERT INTO drug_interactions (medicine_a_id, medicine_b_id, interaction_type, description, recommendation)
 SELECT 
     m1.id,
@@ -344,10 +329,6 @@ SELECT
 FROM medicines m1, medicines m2
 WHERE m1.name = 'Amoxicillin' AND m2.name = 'Atorvastatin'
 ON CONFLICT DO NOTHING;
-
--- =====================================================
--- SUCCESS MESSAGE
--- =====================================================
 
 SELECT '✅ Phase 2 Medical Compliance migration completed successfully!' as status,
        'Prescription compliance, GST fields, and controlled substance tracking added' as details;</div>
